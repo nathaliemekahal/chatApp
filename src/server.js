@@ -2,8 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const socketio = require("socket.io");
+const mongoose = require("mongoose");
 const http = require("http");
 const users = require("./users.json");
+const userRoutes = require("./users/index.js");
 
 dotenv.config();
 
@@ -48,7 +50,19 @@ io.on("connection", (socket) => {
 
 let port = process.env.port;
 app.use(cors());
+app.use(express.json());
+app.use("/users", userRoutes);
 
-server.listen(port, () => {
-  console.log("RUNNING ON PORT " + port);
+mongoose
+  .connect(process.env.mongo_url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(
+    server.listen(port, () => {
+      console.log(`working on port ${port}`);
+    })
+  );
+mongoose.connection.on("connected", () => {
+  console.log("connected to atlas");
 });
