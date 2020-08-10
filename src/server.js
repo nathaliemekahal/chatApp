@@ -65,9 +65,9 @@ io.on("connection", (socket) => {
       });
       roomId = roomid;
     }
-    socket.on("chatmessage", ({ text, to }) => {
+    socket.on("chatmessage", ({ from, text, to }) => {
       if (roomId) {
-        io.to(roomId).emit("message", { text, to });
+        io.to(roomId).emit("message", { from, text, to });
       }
     });
     //LEAVE ROOM
