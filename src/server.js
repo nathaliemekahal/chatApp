@@ -13,87 +13,100 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-let userList = [];
 let rooms = [
   {
     id: "",
-    owner: "",
+    user1: "",
     occupied: false,
-    participant: "",
+    user2: "",
   },
 ];
 
 io.on("connection", (socket) => {
-  console.log("connected");
-  console.log(socket.rooms);
   socket.on("joinRoom", ({ username, opponent, roomid }) => {
-    let roomExists = rooms.find((room) => room.owner === opponent);
+    let roomId;
+    let roomExists = rooms.find(
+      (room) => room.user1 === opponent || room.user2 === opponent
+    );
     if (roomExists && roomExists.occupied === false) {
-      let filteredRooms = rooms.filter((room) => room.owner !== opponent);
-      filteredRooms.push({
-        id: roomExists.id,
-        owner: roomExists.owner,
-        occupied: true,
-        participant: username,
-      });
-      rooms = filteredRooms;
+      roomId = roomExists.id;
+      if (roomExists.user1 === opponent) {
+        let filteredRooms = rooms.filter((room) => room.user1 !== opponent);
+        filteredRooms.push({
+          id: roomExists.id,
+          user1: roomExists.user1,
+          occupied: true,
+          user2: username,
+        });
+        rooms = filteredRooms;
+      } else if (roomExists.user2 === opponent) {
+        let filteredRooms = rooms.filter((room) => room.user2 !== opponent);
+        filteredRooms.push({
+          id: roomExists.id,
+          user1: username,
+          occupied: true,
+          user2: roomExists.user2,
+        });
+        rooms = filteredRooms;
+      }
       socket.join(roomExists.id, function () {
         console.log(socket.rooms);
       });
       roomId = roomExists.id;
-      // console.log("room exists");
     } else {
       rooms.push({
         id: roomid,
-        owner: username,
+        user1: username,
         occupied: false,
-        participant: "",
+        user2: "",
       });
       socket.join(roomid, function () {
         console.log(socket.rooms);
       });
       roomId = roomid;
-      // console.log("room created");
     }
-    console.log(rooms);
     socket.on("chatmessage", ({ text, to }) => {
-      console.log(roomId);
-      io.to(roomId).emit("message", { text, to });
+      if (roomId) {
+        io.to(roomId).emit("message", { text, to });
+      }
     });
+    //LEAVE ROOM
+    socket.on("leaveRoom", ({ username }) => {
+      let room = rooms.find(
+        (room) => room.user1 === username || room.user2 === username
+      );
+      if (room.user2 === username) {
+        let filteredRooms = rooms.filter((room) => room.user2 !== username);
+        filteredRooms.push({
+          id: room.id,
+          user1: room.user1,
+          occupied: false,
+          user2: "",
+        });
+
+        rooms = filteredRooms;
+        socket.leave(room.id, function () {
+          roomId = "";
+        });
+      } else if (room.user1 === username) {
+        let filteredRooms = rooms.filter((room) => room.user1 !== username);
+        filteredRooms.push({
+          id: room.id,
+          user1: "",
+          occupied: false,
+          user2: room.user2,
+        });
+
+        rooms = filteredRooms;
+        socket.leave(room.id, function () {
+          roomId = "";
+        });
+      }
+    });
+    //
   });
   //
-  socket.on("leaveRoom", ({ username }) => {
-    let room = rooms.find(
-      (room) => room.owner === username || room.participant === username
-    );
-    if (room.participant === username) {
-      let filteredRooms = rooms.filter((room) => room.participant !== username);
-      filteredRooms.push({
-        id: room.id,
-        owner: room.owner,
-        occupied: false,
-        participant: "",
-      });
 
-      rooms = filteredRooms;
-      socket.leave(room.id);
-      console.log(rooms);
-    } else if (room.owner === username) {
-      let filteredRooms = rooms.filter((room) => room.owner !== username);
-      filteredRooms.push({
-        id: room.id,
-        owner: "",
-        occupied: false,
-        participant: room.participant,
-      });
-
-      rooms = filteredRooms;
-      socket.leave(room.id, function () {
-        console.log(socket.rooms);
-      });
-      console.log(rooms);
-    }
-  });
   //
   socket.on("disconnect", () => {
     console.log("disconnected");
