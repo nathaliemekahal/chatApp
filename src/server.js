@@ -6,21 +6,13 @@ const mongoose = require("mongoose");
 const http = require("http");
 const users = require("./users.json");
 const userRoutes = require("./users/index.js");
+let rooms = require("./rooms/data.json");
 
 dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
-
-let rooms = [
-  {
-    id: "",
-    user1: "",
-    occupied: false,
-    user2: "",
-  },
-];
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", ({ username, opponent, roomid }) => {
@@ -50,7 +42,7 @@ io.on("connection", (socket) => {
         rooms = filteredRooms;
       }
       socket.join(roomExists.id, function () {
-        console.log(socket.rooms);
+        console.log("join", rooms);
       });
       roomId = roomExists.id;
     } else {
@@ -61,11 +53,12 @@ io.on("connection", (socket) => {
         user2: "",
       });
       socket.join(roomid, function () {
-        console.log(socket.rooms);
+        console.log("join", rooms);
       });
       roomId = roomid;
     }
     socket.on("chatmessage", ({ from, text, to }) => {
+      console.log(roomId);
       if (roomId) {
         io.to(roomId).emit("message", { from, text, to });
       }
@@ -75,33 +68,35 @@ io.on("connection", (socket) => {
       let room = rooms.find(
         (room) => room.user1 === username || room.user2 === username
       );
-      if (room.user2 === username) {
-        let filteredRooms = rooms.filter((room) => room.user2 !== username);
-        filteredRooms.push({
-          id: room.id,
-          user1: room.user1,
-          occupied: false,
-          user2: "",
-        });
+      if (room) {
+        if (room.user2 === username) {
+          let filteredRooms = rooms.filter((room) => room.user2 !== username);
+          filteredRooms.push({
+            id: room.id,
+            user1: room.user1,
+            occupied: false,
+            user2: "",
+          });
 
-        rooms = filteredRooms;
-        socket.leave(room.id, function () {
-          roomId = "";
-        });
-      } else if (room.user1 === username) {
-        let filteredRooms = rooms.filter((room) => room.user1 !== username);
-        filteredRooms.push({
-          id: room.id,
-          user1: "",
-          occupied: false,
-          user2: room.user2,
-        });
+          rooms = filteredRooms;
+          socket.leave(room.id);
+          console.log("leave1", rooms);
+        } else if (room.user1 === username) {
+          let filteredRooms = rooms.filter((room) => room.user1 !== username);
+          filteredRooms.push({
+            id: room.id,
+            user1: "",
+            occupied: false,
+            user2: room.user2,
+          });
 
-        rooms = filteredRooms;
-        socket.leave(room.id, function () {
-          roomId = "";
-        });
+          rooms = filteredRooms;
+          socket.leave(room.id);
+
+          console.log("leave2", rooms);
+        }
       }
+      roomId = "";
     });
     //
   });
