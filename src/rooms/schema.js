@@ -2,17 +2,16 @@ const { Schema, model } = require("mongoose");
 
 const roomSchema = new Schema(
   {
-    owner: {
+    user1: {
       type: String,
-      required: true,
     },
     id: {
       type: Number,
-      required: true,
     },
-    busy: {
+    occupied: {
       type: Boolean,
     },
+    user2: Number,
   },
   { timestamps: true }
 );

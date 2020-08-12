@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const http = require("http");
 const users = require("./users.json");
 const userRoutes = require("./users/index.js");
+const msgRoutes = require("./msgs/index");
 let rooms = require("./rooms/data.json");
 
 dotenv.config();
@@ -112,6 +113,7 @@ let port = process.env.port;
 app.use(cors());
 app.use(express.json());
 app.use("/users", userRoutes);
+app.use("/msgs", msgRoutes);
 
 mongoose
   .connect(process.env.mongo_url, {
