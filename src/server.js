@@ -113,10 +113,11 @@ io.on("connection", (socket) => {
 
 io.on("connection", (socket) => {
   let id = socket.id;
-  console.log(id);
   socket.on("info", ({ username }) => {
-    console.log(username);
-    users.push({ username, id });
+    const userExists = users.find((user) => user.username === username);
+    if (!userExists) {
+      users.push({ username, id });
+    }
     console.log(users);
   });
   socket.on("chatmessage", ({ from, text, to }) => {
