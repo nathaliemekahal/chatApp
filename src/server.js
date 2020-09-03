@@ -14,6 +14,7 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
+/*
 
 io.on("connection", (socket) => {
   socket.on("joinRoom", ({ username, opponent, roomid }) => {
@@ -108,7 +109,29 @@ io.on("connection", (socket) => {
     console.log("disconnected");
   });
 });
+*/
 
+io.on("connection", (socket) => {
+  let id = socket.id;
+  console.log(id);
+  socket.on("info", ({ username }) => {
+    console.log(username);
+    users.push({ username, id });
+    console.log(users);
+  });
+  socket.on("chatmessage", ({ from, text, to }) => {
+    let receiver = users.find((user) => user.username === to);
+    io.to(receiver.id).emit("message", { from, text, to });
+    console.log(text);
+    console.log(receiver);
+  });
+  //
+
+  //
+  socket.on("disconnect", () => {
+    console.log("disconnected");
+  });
+});
 let port = process.env.port;
 app.use(cors());
 app.use(express.json());
