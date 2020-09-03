@@ -10,9 +10,10 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    Sid: { type: String },
   },
   { timestamps: true }
 );
 
-const userModel = model("user", userSchema);
+const userModel = model("users", userSchema);
 module.exports = userModel;
