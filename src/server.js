@@ -20,37 +20,49 @@ const io = socketio(server);
 
 let userList = [];
 
-io.on("connection", (socket) => {
+getUsers = () => {
+  console.log("object");
+  axios
+    .get("http://localhost:3007/users")
+    .then(response)
+    .then((data) => {
+      console.log("data is here", data.data);
+    });
+};
+io.on("connection", async (socket) => {
   let Sid = socket.id;
-  console.log("SOCKET ID", Sid);
+  let users = await getUsers();
+  console.log("users", users);
 
   socket.on("info", async ({ username, name }) => {
     let userExists = true;
-    axios
-      .get("http://localhost:3007/users")
-      .then(response)
-      .then((data) => {
-        filteredArray = data.data.filter((user) => user.username === username);
-        userExists = filteredArray.length > 0 ? true : false;
-        // console.log(userExists);
-        if (!userExists) {
-          user = { username: username, name: name };
-          axios
-            .post("http://localhost:3007/users", { ...user, Sid: Sid })
-            .then((res) => {})
-            .catch((error) => console.log(error));
-        } else if (userExists) {
-          axios
-            .put(`http://localhost:3007/users/${username}`, {
-              Sid: Sid,
-            })
-            .then((res) => {
-              // console.log("post ersponse", response);
-            })
-            .catch((error) => console.log(error));
-        }
-      })
-      .catch((error) => console.log(error));
+    // axios
+    //   .get("http://localhost:3007/users")
+    //   .then(response)
+    //   .then((data) => {
+    // let users = await getUsers();
+
+    filteredArray = data.data.filter((user) => user.username === username);
+    userExists = filteredArray.length > 0 ? true : false;
+    // console.log(userExists);
+    if (!userExists) {
+      user = { username: username, name: name };
+      axios
+        .post("http://localhost:3007/users", { ...user, Sid: Sid })
+        .then((res) => {})
+        .catch((error) => console.log(error));
+    } else if (userExists) {
+      axios
+        .put(`http://localhost:3007/users/${username}`, {
+          Sid: Sid,
+        })
+        .then((res) => {
+          // console.log("post ersponse", response);
+        })
+        .catch((error) => console.log(error));
+    }
+    // })
+    // .catch((error) => console.log(error));
   });
 
   // socket.on(
