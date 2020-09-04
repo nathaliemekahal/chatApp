@@ -24,7 +24,7 @@ io.on("connection", (socket) => {
   let Sid = socket.id;
   console.log("SOCKET ID", Sid);
 
-  socket.on("info", ({ username, name }) => {
+  socket.on("info", async ({ username, name }) => {
     let userExists = true;
     axios
       .get("http://localhost:3007/users")
@@ -32,24 +32,25 @@ io.on("connection", (socket) => {
       .then((data) => {
         filteredArray = data.data.filter((user) => user.username === username);
         userExists = filteredArray.length > 0 ? true : false;
-        console.log(userExists);
+        // console.log(userExists);
+        if (!userExists) {
+          user = { username: username, name: name };
+          axios
+            .post("http://localhost:3007/users", { ...user, Sid: Sid })
+            .then((res) => {})
+            .catch((error) => console.log(error));
+        } else if (userExists) {
+          axios
+            .put(`http://localhost:3007/users/${username}`, {
+              Sid: Sid,
+            })
+            .then((res) => {
+              // console.log("post ersponse", response);
+            })
+            .catch((error) => console.log(error));
+        }
       })
       .catch((error) => console.log(error));
-    console.log("Here");
-    // if (!userExists) {
-    //   user = { username: username, name: name };
-    //   axios
-    //     .post("http://localhost:3007/users", { ...user, Sid: Sid })
-    //     .then((res) => {
-    //       // for (let key in data) {
-    //       //   const user = data[key];
-    //       //   user.id = key;
-    //       //   users.push(user);
-    //       // }
-    //       // this.users = users;
-    //     })
-    //     .catch((error) => console.log(error));
-    // }
   });
 
   // socket.on(
@@ -73,8 +74,14 @@ app.use(express.json());
 app.use("/users", userRoutes);
 app.use("/msgs", msgRoutes);
 
-mongoose.connect(process.env.mongo_url).then(
-  server.listen(port, () => {
-    console.log(`working on port ${port}`);
+mongoose
+  .connect(process.env.mongo_url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
   })
-);
+  .then(
+    server.listen(port, () => {
+      console.log(`working on port ${port}`);
+    })
+  );

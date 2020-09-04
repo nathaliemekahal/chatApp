@@ -1,5 +1,5 @@
 const { Schema, model } = require("mongoose");
-
+const msgModel = require("../msgs/schema");
 const userSchema = new Schema(
   {
     name: {
@@ -11,6 +11,7 @@ const userSchema = new Schema(
       required: true,
     },
     Sid: { type: String },
+    // messages: [{ msgModel }],
   },
   { timestamps: true }
 );
