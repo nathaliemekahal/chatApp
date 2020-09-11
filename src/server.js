@@ -18,67 +18,102 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
-let userList = [];
+let onlineList = [];
 
-getUsers = () => {
-  console.log("object");
-  axios
-    .get("http://localhost:3007/users")
-    .then(response)
-    .then((data) => {
-      console.log("data is here", data.data);
-    });
-};
 io.on("connection", async (socket) => {
-  let Sid = socket.id;
-  let users = await getUsers();
-  console.log("users", users);
-
-  socket.on("info", async ({ username, name }) => {
-    let userExists = true;
-    // axios
-    //   .get("http://localhost:3007/users")
-    //   .then(response)
-    //   .then((data) => {
-    // let users = await getUsers();
-
-    filteredArray = data.data.filter((user) => user.username === username);
-    userExists = filteredArray.length > 0 ? true : false;
-    // console.log(userExists);
-    if (!userExists) {
-      user = { username: username, name: name };
-      axios
-        .post("http://localhost:3007/users", { ...user, Sid: Sid })
-        .then((res) => {})
-        .catch((error) => console.log(error));
-    } else if (userExists) {
-      axios
-        .put(`http://localhost:3007/users/${username}`, {
-          Sid: Sid,
-        })
-        .then((res) => {
-          // console.log("post ersponse", response);
-        })
-        .catch((error) => console.log(error));
+  let id = socket.id;
+  let user;
+  console.log("connected", id);
+  socket.on("userInfo", ({ username }) => {
+    let userExists = onlineList.find((user) => user.username === username);
+    if (userExists === undefined) {
+      onlineList.push({ username, id });
+      io.emit("updateUsers", onlineList);
+      user = username;
+    } else {
+      console.log("already exists");
     }
-    // })
-    // .catch((error) => console.log(error));
+    console.log("onlinelist", onlineList);
   });
 
-  // socket.on(
-  //   "chatmessage",
-  //   ({ from: { name, username, Sid }, text, to: { name, username, Sid } }) => {
-  //     let receiver = users.find((user) => user.username === to);
-  //     io.to(receiver.id).emit("message", { from, text, to });
-  //     console.log(text);
-  //     console.log(receiver);
-  //   }
-  // );
-
-  // socket.on("disconnect", () => {
-  //   console.log("disconnected");
-  // });
+  socket.on("chat", async ({ from, to, text, time }) => {
+    let receiver = onlineList.find((user) => user.username === to);
+    let sender = onlineList.find((user) => user.username === from);
+    if (receiver) {
+      io.to(receiver.id).emit("message", { from, text, to, time });
+    }
+    io.to(sender.id).emit("message", { from, text, to, time });
+    console.log(receiver);
+    console.log(sender);
+  });
+  socket.on("disconnect", () => {
+    console.log("user", user);
+    let newUsers = onlineList.filter((element) => element.username !== user);
+    onlineList = newUsers;
+    io.emit("userAfterDC", newUsers);
+    console.log("disconnected", newUsers);
+  });
 });
+
+// getUsers = () => {
+//   console.log("object");
+//   axios
+//     .get("http://localhost:3007/users")
+//     .then(response)
+//     .then((data) => {
+//       console.log("data is here", data.data);
+//     });
+// };
+// io.on("connection", async (socket) => {
+//   let Sid = socket.id;
+//   let users = await getUsers();
+//   console.log("users", users);
+
+//   socket.on("info", async ({ username, name }) => {
+//     let userExists = true;
+//     // axios
+//     //   .get("http://localhost:3007/users")
+//     //   .then(response)
+//     //   .then((data) => {
+//     // let users = await getUsers();
+
+//     filteredArray = data.data.filter((user) => user.username === username);
+//     userExists = filteredArray.length > 0 ? true : false;
+//     // console.log(userExists);
+//     if (!userExists) {
+//       user = { username: username, name: name };
+//       axios
+//         .post("http://localhost:3007/users", { ...user, Sid: Sid })
+//         .then((res) => {})
+//         .catch((error) => console.log(error));
+//     } else if (userExists) {
+//       axios
+//         .put(`http://localhost:3007/users/${username}`, {
+//           Sid: Sid,
+//         })
+//         .then((res) => {
+//           // console.log("post ersponse", response);
+//         })
+//         .catch((error) => console.log(error));
+//     }
+//     // })
+//     // .catch((error) => console.log(error));
+//   });
+
+// socket.on(
+//   "chatmessage",
+//   ({ from: { name, username, Sid }, text, to: { name, username, Sid } }) => {
+//     let receiver = users.find((user) => user.username === to);
+//     io.to(receiver.id).emit("message", { from, text, to });
+//     console.log(text);
+//     console.log(receiver);
+//   }
+// );
+
+// socket.on("disconnect", () => {
+//   console.log("disconnected");
+// });
+// });
 
 let port = process.env.port;
 app.use(cors());
