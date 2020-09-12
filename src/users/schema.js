@@ -10,7 +10,7 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    Sid: { type: String },
+
     // messages: [{ msgModel }],
   },
   { timestamps: true }
