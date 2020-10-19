@@ -10,9 +10,13 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
+    password:{
+      type: String,
+      required: true,
+    }
   },
   { timestamps: true }
 );
 
-const userModel = model("user", userSchema);
+const userModel = model("chatusers", userSchema);
 module.exports = userModel;
