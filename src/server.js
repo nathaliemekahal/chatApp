@@ -24,6 +24,7 @@ io.on("connection", (socket) => {
     }
     user = username;
     console.log(users);
+    io.emit("refreshUsers",{users})
   });
   socket.on("chatmessage", ({ from, text, to, time }) => {
     let receiver = users.find((user) => user.username === to);

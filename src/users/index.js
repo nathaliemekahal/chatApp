@@ -34,15 +34,7 @@ router.post("/login", async (req, res) => {
       profile.password
     );
     if (isAuthorized) {
-      const secretkey = process.env.SECRET_KEY;
-      const payload = { id: profile._id };
-      const token = await jwt.sign(payload, secretkey, { expiresIn: "1 week" });
-
-      res.cookie("accessToken", token, {
-        httpOnly: true,
-        sameSite: "none",
-        secure: false,
-      });
+    
       res.send("ok");
     } else {
       res.status(401).send("Invalid credentials");
